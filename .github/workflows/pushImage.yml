@@ -1,0 +1,27 @@
+name: Push Image
+# Only trigger, when the build workflow succeeded i.e. CI Pipeline
+on:
+  workflow_run:
+    workflows: ["Python app"]
+    types:
+      - completed
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull Docker Image
+        env: 
+          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
+        run: sudo docker pull $DOCKER_USER/diabetes-fastapi:latest
+    
+      - name: Delete Old Docker Container
+        run: sudo docker rm -f diabetes-fastapi-container || true
+            
+      - name: Run Docker Container
+        env: 
+          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
+        run: sudo docker run -it -d -p 80:8001 --name diabetes-fastapi-container $DOCKER_USER/diabetes-fastapi:latest
+
+      - name: Logout to Docker hub
+        run: docker logout
